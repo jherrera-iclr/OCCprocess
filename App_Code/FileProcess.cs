@@ -15,9 +15,11 @@ namespace OCCprocess
         public FileProcess() { }
 
         private static icLogger logger = icLogger.Instance;
+        private static bool emptyFlag = true;
+
         public static int LoadFile(string sInputFile)
         {
-            int iPMRetVal = 0;
+            int retVal = 0;
             try
             {
                 var configData = icGeneric.GetConfigData();
@@ -27,6 +29,12 @@ namespace OCCprocess
                 {
                     logger.LogError(sInputFile + ": Input File " + sInputFilePath + " Does not exist");
                     return -4;
+                }
+
+                if(new FileInfo(sInputFilePath).Length == 0)
+                {
+                    logger.LogWarning("Warning: empty file.");
+                    return 0;
                 }
 
                 XDocument oldXml = XDocument.Load(sInputFilePath);
@@ -45,18 +53,22 @@ namespace OCCprocess
                     }
                     current = (XElement)current.NextNode;
                 }
+                if (emptyFlag)
+                {
+                    logger.LogWarning("Warning: No options were updated (no valid updates or empty file).");
+                }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "LoadFile()");
                 return -1;
             }
-            return iPMRetVal;
+            return retVal;
         }
 
         public static void ProcessSecUpdate(XElement SecListUpd)
         {   
-            string RptID = SecListUpd.Attribute("RptID").Value;
+
 
             XElement instrmt_1 = (XElement)SecListUpd.FirstNode;
             instrmt_1 = (XElement)instrmt_1.FirstNode;
@@ -87,8 +99,18 @@ namespace OCCprocess
                 return;
             }
 
+            emptyFlag = false;
+
             CommandClass command = new CommandClass();
-            command.UpdateOptionExpDt(symbol, MatDt_2.ToString("MM/dd/yyyy"));
+            int retVal = command.UpdateOptionExpDt(symbol, MatDt_2.ToString("MM/dd/yyyy"));
+            if(retVal == -2)
+            {
+                logger.LogError("Symbol not found: " + symbol + "\n Update failed.");
+            }
+            else if(retVal==0)
+            {
+                logger.LogInfo("Option Updated. Symbol: " + symbol);
+            }
             
         }
     }
