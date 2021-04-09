@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
 using inteliclear.v1;
 using inteliclear.icLoggerNS.v1;
 using System.Configuration;
+using System.IO;
 
 namespace OCCprocess
 {
@@ -19,7 +19,10 @@ namespace OCCprocess
             {
                 var configData = icGeneric.GetConfigData();
 
-                logger.InitLogging(configData.LogDir + ConfigurationManager.AppSettings["LogFilename"]);
+                string configFile = $"{Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)}\\OCCprocess.dll.config";
+                string logName = configData.LogDir + ConfigurationManager.AppSettings["LogFilename"];
+
+                logger.InitLogging(logName, configFile);
                 logger.LogInfo($"Version: {Assembly.GetExecutingAssembly().GetName().Version}");
                 logger.LogInfo($"Parameters: {string.Join(" ", args)}");
 
@@ -28,11 +31,8 @@ namespace OCCprocess
                 string sInputFile = string.Empty;
                 retVal = argsProcess.GetArgs(args, out sInputFile);
 
-                var objITEntity = new FileEntity();
-                retVal = argsProcess.GetFileEntities(sInputFile, out objITEntity);
-
                 logger.LogInfo("Process Started.");
-                retVal = FileProcess.LoadFile(objITEntity);
+                retVal = FileProcess.LoadFile(sInputFile);
             }
             catch (Exception ex)
             {
