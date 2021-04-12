@@ -4,18 +4,18 @@ using System.Text;
 using inteliclear.v1;
 using inteliclear.icLoggerNS.v1;
 using System.IO;
-using System.Configuration;
 using System.Xml.Linq;
 using System.Linq;
 
 namespace OCCprocess
 {
-    class FileProcess
+    class SEC_LIST
     {
-        public FileProcess() { }
 
         private static icLogger logger = icLogger.Instance;
         private static bool emptyFlag = true;
+
+        public SEC_LIST() { }
 
         public static int LoadFile(string sInputFile)
         {
@@ -31,13 +31,32 @@ namespace OCCprocess
                     return -4;
                 }
 
-                if(new FileInfo(sInputFilePath).Length == 0)
+                if (new FileInfo(sInputFilePath).Length == 0)
                 {
                     logger.LogWarning("Warning: empty file.");
                     return 0;
                 }
 
-                
+                XDocument oldXml = XDocument.Load(sInputFilePath);
+                XElement firstChild = oldXml.Root.Elements().First();
+                XDocument newXml = new XDocument(new XDeclaration("1.0", "utf-8", "yes"),
+                                                 firstChild);
+
+                XElement current = (XElement)newXml.FirstNode;
+                current = (XElement)current.FirstNode;
+                int lineNumber = 3;
+
+                List<SecurityList> SecLists = new List<SecurityList>();
+
+                while (current != null)
+                {
+                    if (current.Name.LocalName == "SecList")
+                    {
+                        ParseSecList(current, SecLists, lineNumber.ToString());
+                    }
+                    current = (XElement)current.NextNode;
+                    lineNumber += 1;
+                }
             }
             catch (Exception ex)
             {
@@ -45,6 +64,9 @@ namespace OCCprocess
                 return -1;
             }
             return retVal;
+        }
+        public static void ParseSecList(XElement SecList, List<SecurityList> SecLists, string lineNumber)
+        {
         }
     }
 }

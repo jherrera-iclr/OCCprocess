@@ -32,7 +32,15 @@ namespace OCCprocess
                 retVal = argsProcess.GetArgs(args, out sInputFile);
 
                 logger.LogInfo("Process Started.");
-                retVal = FileProcess.LoadFile(sInputFile);
+
+                if (sInputFile == "SEC_UPDATE")
+                {
+                    retVal = SEC_UPDATE.LoadFile(sInputFile);
+                }
+                if (sInputFile == "SEC_LIST")
+                {
+                    retVal = SEC_LIST.LoadFile(sInputFile);
+                }
             }
             catch (Exception ex)
             {
