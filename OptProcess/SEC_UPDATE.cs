@@ -14,6 +14,7 @@ namespace OCCprocess
     class SEC_UPDATE
     {
         private static icLogger logger = icLogger.Instance;
+        private static bool emptyFlag = true;
 
         public SEC_UPDATE() { }
 
@@ -46,8 +47,6 @@ namespace OCCprocess
                 current = (XElement)current.FirstNode;
                 int lineNumber = 3;
 
-                List<SecurityUpdate> SecUpds = new List<SecurityUpdate>();
-
                 while (current != null)
                 {
                     if (current.Name.LocalName == "SecListUpd")
@@ -59,22 +58,15 @@ namespace OCCprocess
                         }
                         else if (updActn == "M")
                         {
-                            ParseXML(current, SecUpds, lineNumber.ToString());
+                            ParseXML(current, lineNumber.ToString());
                         }
                     }
                     current = (XElement)current.NextNode;
                     lineNumber += 1;
                 }
-                if (SecUpds.Count == 0)
+                if (emptyFlag)
                 {
                     logger.LogWarning("No options were updated (no valid updates or empty file).");
-                }
-                else
-                {
-                    foreach(var secUpd in SecUpds)
-                    {
-                        ProcessSecUpdate(secUpd);
-                    }
                 }
             }
             catch (Exception ex)
@@ -85,13 +77,14 @@ namespace OCCprocess
             return retVal;
         }
 
-        public static void ParseXML(XElement SecListUpd, List<SecurityUpdate> SecUpds, string lineNumber)
+        public static void ParseXML(XElement SecListUpd, string lineNumber)
         {
             // Required data
             DateTime MatDt_1, MatDt_2;
             XElement instrmt_1, instrmt_2;
-            string RptID, Sym_1, CFI_1, symbol;
+            string Sym_1, CFI_1;
             Double StrkPx_1;
+            SecurityUpdate secUpd = new SecurityUpdate();
 
             // RptID
             if (String.IsNullOrEmpty(SecListUpd.Attribute("RptID")?.Value))
@@ -99,7 +92,7 @@ namespace OCCprocess
                 logger.LogError("RptID is empty or missing. - Line " + lineNumber);
                 return;
             }
-            RptID = SecListUpd.Attribute("RptID").Value;
+            secUpd.RptID = SecListUpd.Attribute("RptID").Value;
 
             // Instrmt 1
             instrmt_1 = (XElement)SecListUpd.FirstNode;
@@ -158,11 +151,11 @@ namespace OCCprocess
             }
             if (CFI_1[1] == 'C')
             {
-                symbol = Sym_1 + "\t" + MatDt_1.ToString("yyMMdd") + "C" + StrkPx_1.ToString("00000.000").Replace(".", "");
+                secUpd.Symbol = Sym_1 + "\t" + MatDt_1.ToString("yyMMdd") + "C" + StrkPx_1.ToString("00000.000").Replace(".", "");
             }
             else if (CFI_1[1] == 'P')
             {
-                symbol = Sym_1 + "\t" + MatDt_1.ToString("yyMMdd") + "P" + StrkPx_1.ToString("00000.000").Replace(".", "");
+                secUpd.Symbol = Sym_1 + "\t" + MatDt_1.ToString("yyMMdd") + "P" + StrkPx_1.ToString("00000.000").Replace(".", "");
             }
             else
             {
@@ -170,19 +163,12 @@ namespace OCCprocess
                 return;
             }
 
-            // Create Sec Update object
-            SecurityUpdate secUpd = new SecurityUpdate
-            {
-                RptID = RptID,
-                MatDt = MatDt_2,
-                Symbol = symbol
-            };
-
-            SecUpds.Add(secUpd);
+            ProcessSecUpdate(secUpd);
         }
 
         public static void ProcessSecUpdate(SecurityUpdate secUpd)
         {
+            emptyFlag = false;
             CommandClass command = new CommandClass();
             int retVal = command.UpdateOptionExpDt(secUpd.Symbol, secUpd.MatDt.ToString("MM/dd/yyyy"));
             if (retVal == -2)

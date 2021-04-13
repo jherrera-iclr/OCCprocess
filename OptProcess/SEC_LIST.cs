@@ -52,10 +52,21 @@ namespace OCCprocess
                 {
                     if (current.Name.LocalName == "SecList")
                     {
-                        ParseSecList(current, SecLists, lineNumber.ToString());
+                        ParseXML(current, SecLists, lineNumber.ToString());
                     }
                     current = (XElement)current.NextNode;
                     lineNumber += 1;
+                }
+                if (SecLists.Count == 0)
+                {
+                    logger.LogWarning("No options were added (no valid options or empty file).");
+                }
+                else
+                {
+                    foreach (var secList in SecLists)
+                    {
+                        ProcessSecList(secList);
+                    }
                 }
             }
             catch (Exception ex)
@@ -65,8 +76,19 @@ namespace OCCprocess
             }
             return retVal;
         }
-        public static void ParseSecList(XElement SecList, List<SecurityList> SecLists, string lineNumber)
+
+        public static void ParseXML(XElement SecList, List<SecurityList> SecLists, string lineNumber)
         {
+            string RptID, CFI, underSym, Symbol;
+            DateTime createDt, inactiveDt, MatDt;
+            
+
+        }
+
+        public static void ProcessSecList(SecurityList secList)
+        {
+            CommandClass command = new CommandClass();
+            // Call insert SP
         }
     }
 }
