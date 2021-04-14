@@ -124,6 +124,7 @@ namespace OCCprocess
                 logger.LogError("Invalid MatDt in Instrmt block 2. - Line " + lineNumber);
                 return;
             }
+            secUpd.MatDt = MatDt_2;
 
             if (MatDt_1 == MatDt_2) { return; } // Check if MatDt does not change after update
 
