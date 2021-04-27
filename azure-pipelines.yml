@@ -9,8 +9,12 @@ variables:
   MajorVersion: 1
   MinorVersion: 0
   PatchVersion: 0
+  project_name: OCCprocess
+  org_name: testProj
 
 stages:
+
+# If building master, name = version
 - stage: Master_Name
   displayName: Master Version Name
   condition: eq(variables['Build.SourceBranchName'], 'master')
@@ -22,7 +26,8 @@ stages:
       - bash: |
            echo "##vso[build.updatebuildnumber]$(MajorVersion).$(MinorVersion).$(PatchVersion).$(brpatch)"
         name: SetBranchBuildName
-  
+        
+# If building branch, name = branch name
 - stage: Branch_Name
   displayName: Branch Version Name
   condition: ne(variables['Build.SourceBranchName'], 'master')
@@ -32,25 +37,27 @@ stages:
       - bash: |
            echo "##vso[build.updatebuildnumber]$(Build.SourceBranchName)"
         name: SetBranchBuildName
-        
+
 - stage:
   displayName: Build Steps
   condition: or(not(failed('Master_Name')), not(failed('Branch_Name')))
   jobs:
     - job: Build_Steps
       steps:
-
+      
+      # Download icGeneric.dll from latest icGeneric pipeline (latest build)
       - task: DownloadBuildArtifacts@0
         displayName: Download icGeneric.dll
         inputs:
           buildType: 'specific'
-          project: 'iclr-build'
+          project: '$(org_name)'
           pipeline: 'icGeneric'
           specificBuildWithTriggering: true
           buildVersionToDownload: 'latest'
           downloadType: 'specific'
           downloadPath: './'
 
+      # Move icGeneric.dll to project directory
       - task: PowerShell@2
         displayName: Unzip/copy icGeneric
         inputs:
@@ -61,17 +68,19 @@ stages:
             rm *.zip
             cp icGeneric* ../
 
+      # Download icLogger.dll from latest icLogger pipeline (latest build)
       - task: DownloadBuildArtifacts@0
         displayName: Download icLogger artifact
         inputs:
           buildType: 'specific'
-          project: 'iclr-build'
+          project: '$(org_name)'
           pipeline: 'icLogger'
           specificBuildWithTriggering: true
           buildVersionToDownload: 'latest'
           downloadType: 'specific'
           downloadPath: './'
-
+      
+      # Move icLogger.dll to project directory
       - task: PowerShell@2
         displayName: Unzip/copy icLogger + dependencies
         inputs:
@@ -82,38 +91,45 @@ stages:
             rm *.zip
             cp icLogger* ../
 
+      - task: NuGetCommand@2
+        inputs:
+          command: 'restore'
+          restoreSolution: '$(project_name).sln'
+          feedsToUse: 'select'
+
       - task: DotNetCoreCLI@2
         inputs:
           command: 'publish'
           publishWebProjects: false
-          projects: './OCCprocess.csproj'
+          projects: './$(project_name).csproj'
           arguments: '-c Release --self-contained true -r win-x86'
           zipAfterPublish: false
 
+      # Create artifact zip
       - task: PowerShell@2
         displayName: Archive Files
         inputs:
           targetType: 'inline'
           script: |
-            Get-ChildItem -Recurse
-            Compress-Archive -Path "$(Build.SourcesDirectory)/bin/Release/netcoreapp3.1/win-x86/publish/*" -DestinationPath "$(Build.ArtifactStagingDirectory)/OCCprocess_$(Build.BuildId).zip"
-            
+            Compress-Archive -Path "$(Build.SourcesDirectory)/bin/Release/*.exe*" -DestinationPath "$(Build.ArtifactStagingDirectory)/$(project_name)_$(Build.BuildId).zip"
+        
+      # Publish artifact  
       - task: PublishBuildArtifacts@1
-        displayName: Publish OCCprocess artifact
+        displayName: Publish $(project_name) artifact
         inputs:
           pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-          artifactName: OCCprocess
+          artifactName: $(project_name)
 
-        # Create Release
-      - task: GitHubRelease@1
-        displayName: 'Create GitHub Release'
-        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-        inputs:
-            gitHubConnection: 'ICLR-Github'
-            repositoryName: 'inteliclear/OCCprocess'
-            action: 'create'
-            target: '$(Build.SourceVersion)'
-            tagSource: 'userSpecifiedTag'
-            tag: $(Build.BuildNumber)
-            changeLogCompareToRelease: 'lastFullRelease'
-            changeLogType: 'commitBased'          
+      # # Create GitHub release
+      # - task: GitHubRelease@1
+      #   displayName: 'Create GitHub Release'
+      #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+      #   inputs:
+      #       gitHubConnection: 'ICLR-Github'
+      #       repositoryName: 'inteliclear/$(project_name)'
+      #       action: 'create'
+      #       target: '$(Build.SourceVersion)'
+      #       tagSource: 'userSpecifiedTag'
+      #       tag: $(Build.BuildNumber)
+      #       changeLogCompareToRelease: 'lastFullRelease'
+      #       changeLogType: 'commitBased'          
