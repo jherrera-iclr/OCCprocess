@@ -25,22 +25,10 @@ namespace OCCprocess
                 logger.InitLogging(logName, configFile);
                 logger.LogInfo($"Version: {Assembly.GetExecutingAssembly().GetName().Version}");
                 logger.LogInfo($"Parameters: {string.Join(" ", args)}");
-
-                var argsProcess = new ArgsProcess();
-
-                string sInputFile = string.Empty;
-                retVal = argsProcess.GetArgs(args, out sInputFile);
-
+                
                 logger.LogInfo("Process Started.");
 
-                if (sInputFile == "SEC_UPDATE")
-                {
-                    retVal = SEC_UPDATE.LoadFile(sInputFile);
-                }
-                if (sInputFile == "SEC_LIST")
-                {
-                    retVal = SEC_LIST.LoadFile(sInputFile);
-                }
+                retVal = SEC_UPDATE.LoadFile();
             }
             catch (Exception ex)
             {

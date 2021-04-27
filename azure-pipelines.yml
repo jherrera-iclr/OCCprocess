@@ -82,12 +82,6 @@ stages:
             rm *.zip
             cp icLogger* ../
 
-      - task: NuGetCommand@2
-        inputs:
-          command: 'restore'
-          restoreSolution: 'OCCprocess.sln'
-          feedsToUse: 'select'
-
       - task: DotNetCoreCLI@2
         inputs:
           command: 'publish'

@@ -14,35 +14,41 @@ namespace OCCprocess
     class SEC_UPDATE
     {
         private static icLogger logger = icLogger.Instance;
-        private static bool emptyFlag = true;
+        private static int updateCt = 0;
+        private static bool errFlag = false;
 
         public SEC_UPDATE() { }
 
-        public static int LoadFile(string sInputFile)
+        public static int LoadFile()
         {
             int retVal = 0;
             try
             {
                 var configData = icGeneric.GetConfigData();
-                string sInputFilePath = configData.LoadDir + sInputFile + ".xml";
+                string sInputFilePath = configData.LoadDir + "SEC_UPDATE.xml";
                 logger.LogInfo($"ParseMsg(): Loading: " + sInputFilePath);
                 if (!File.Exists(sInputFilePath))
                 {
-                    logger.LogError(sInputFile + ": Input File " + sInputFilePath + " Does not exist");
+                    logger.LogError("Input File - " + sInputFilePath + " Does not exist");
                     return -4;
                 }
 
                 if (new FileInfo(sInputFilePath).Length == 0)
                 {
-                    logger.LogWarning("Warning: empty file.");
+                    logger.LogWarning("SEC_UPDATE file is empty.");
                     return 0;
                 }
 
                 XDocument oldXml = XDocument.Load(sInputFilePath);
                 XElement firstChild = oldXml.Root.Elements().First();
+                if(firstChild.Name.LocalName != "Batch")
+                {
+                    logger.LogError("Invalid update file format. Expecting \"Batch\" node. Received: \"" + firstChild.Name.LocalName + "\".");
+                    return -1;
+                }
+
                 XDocument newXml = new XDocument(new XDeclaration("1.0", "utf-8", "yes"),
                                                  firstChild);
-
                 XElement current = (XElement)newXml.FirstNode;
                 current = (XElement)current.FirstNode;
                 int lineNumber = 3;
@@ -64,9 +70,13 @@ namespace OCCprocess
                     current = (XElement)current.NextNode;
                     lineNumber += 1;
                 }
-                if (emptyFlag)
+                if (updateCt==0)
                 {
-                    logger.LogWarning("No options were updated (no valid updates or empty file).");
+                    logger.LogWarning("0 records processed. (no valid updates or empty file).");
+                }
+                else
+                {
+                    logger.LogInfo(updateCt.ToString() + " records processed.");
                 }
             }
             catch (Exception ex)
@@ -74,6 +84,7 @@ namespace OCCprocess
                 logger.LogError(ex, "LoadFile()");
                 return -1;
             }
+            if (errFlag) { retVal = -1; }
             return retVal;
         }
 
@@ -129,7 +140,7 @@ namespace OCCprocess
             if (MatDt_1 == MatDt_2) { return; } // Check if MatDt does not change after update
 
             // Sym 1
-            Sym_1 = instrmt_1.Attribute("Sym")?.Value;
+            Sym_1 = (instrmt_1.Attribute("Sym")?.Value).PadRight(6);
             if (String.IsNullOrEmpty(Sym_1))
             {
                 logger.LogError("Missing Sym in Instrmt block 1. - Line " + lineNumber);
@@ -152,11 +163,11 @@ namespace OCCprocess
             }
             if (CFI_1[1] == 'C')
             {
-                secUpd.Symbol = Sym_1 + "\t" + MatDt_1.ToString("yyMMdd") + "C" + StrkPx_1.ToString("00000.000").Replace(".", "");
+                secUpd.Symbol = Sym_1 + MatDt_1.ToString("yyMMdd") + "C" + StrkPx_1.ToString("00000.000").Replace(".", "");
             }
             else if (CFI_1[1] == 'P')
             {
-                secUpd.Symbol = Sym_1 + "\t" + MatDt_1.ToString("yyMMdd") + "P" + StrkPx_1.ToString("00000.000").Replace(".", "");
+                secUpd.Symbol = Sym_1 + MatDt_1.ToString("yyMMdd") + "P" + StrkPx_1.ToString("00000.000").Replace(".", "");
             }
             else
             {
@@ -169,12 +180,16 @@ namespace OCCprocess
 
         public static void ProcessSecUpdate(SecurityUpdate secUpd)
         {
-            emptyFlag = false;
             CommandClass command = new CommandClass();
             int retVal = command.UpdateOptionExpDt(secUpd.Symbol, secUpd.MatDt.ToString("MM/dd/yyyy"));
             if (retVal == -2)
             {
                 logger.LogError("Symbol not found: \"" + secUpd.Symbol + "\". Update failed for RptID " + secUpd.RptID);
+                errFlag = true;
+            }
+            else if (retVal == 0)
+            {
+                updateCt += 1;
             }
         }
     }

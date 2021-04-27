@@ -25,7 +25,7 @@ namespace OCCprocess
                     PrintUsage();
                     return -9;
                 }
-                const string cnst_IPType = "|SEC_UPDATE|SEC_LIST|";
+                const string cnst_IPType = "|SEC_UPDATE|";
                 if (cnst_IPType.IndexOf("|" + args[1].ToUpper() + "|") == -1)
                 {
                     logger.LogError("OccProcess: Unknown Parameter(s)");
@@ -42,37 +42,6 @@ namespace OCCprocess
 
             return 0;
         }
-
-        //public int GetFileEntities(string sIpType, out FileEntity objITEntity)
-        //{
-        //    objITEntity = new FileEntity();
-        //    try
-        //    {
-        //        objITEntity.defaultFileName = sIpType + ".txt";
-        //        objITEntity.inputFileType = "TXT";
-        //        objITEntity.fileContentType = "XML";
-        //        objITEntity.outputFileName = sIpType;
-        //        objITEntity.outputFileType = "CSV";
-        //        switch (sIpType)
-        //        {
-        //            case "SEC_UPDATE":
-        //                objITEntity.ID = "Update";
-        //                break;
-        //            case "SEC_LIST":
-        //                objITEntity.ID = "List";
-        //                break;
-        //            default:
-        //                objITEntity = new FileEntity();
-        //                break;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        logger.LogError(ex.Message);
-        //        return -1;
-        //    }
-        //    return 0;
-        //}
 
         public void PrintUsage()
         {
