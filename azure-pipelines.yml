@@ -111,8 +111,8 @@ stages:
         inputs:
           targetType: 'inline'
           script: |
-            Compress-Archive -Path "$(Build.SourcesDirectory)/bin/Release/*.exe*" -DestinationPath "$(Build.ArtifactStagingDirectory)/$(project_name)_$(Build.BuildId).zip"
-        
+            Compress-Archive -Path "$(Build.SourcesDirectory)/bin/Release/netcoreapp3.1/win-x86/publish/*" -DestinationPath "$(Build.ArtifactStagingDirectory)/$(project_name)_$(Build.BuildId).zip"
+            
       # Publish artifact  
       - task: PublishBuildArtifacts@1
         displayName: Publish $(project_name) artifact
