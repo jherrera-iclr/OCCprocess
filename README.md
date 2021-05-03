@@ -24,3 +24,6 @@ Log file name is set in Config file.
 
 ## Application Command
 Command to execute the process: "//IC/IC_DATA/exes/OCCprocess/OCCprocess.exe"
+
+## Test change
+Test Change

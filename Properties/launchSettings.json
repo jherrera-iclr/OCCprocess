@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "OCCprocess": {
+      "commandName": "Project",
+      "commandLineArgs": "/M SEC_UPDATE"
+    }
+  }
+}
