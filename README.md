@@ -25,5 +25,8 @@ Log file name is set in Config file.
 ## Application Command
 Command to execute the process: "//IC/IC_DATA/exes/OCCprocess/OCCprocess.exe"
 
-## Test change
-Test Change
+## Servers Deployed
+FUTU UAT - 49.51.84.242
+
+## Application Document
+https://inteliclear.sharepoint.com/:w:/r/Shared%20Documents/IC%20System%20Documents/IC_OCCprocess.docx?d=w4ccc2b9baf3c4b5292d327b70918bac9&csf=1&web=1
